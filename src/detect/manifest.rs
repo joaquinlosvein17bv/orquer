@@ -365,11 +365,14 @@ pub fn detect(agent: Agent, screen_content: &str) -> AgentDetection {
     )
 }
 
-pub fn detect_with_osc(agent: Agent, input: DetectionInput<'_>) -> AgentDetection {
-    let Some(loaded) = load_manifest(agent) else {
-        return fallback_explain(Some(agent), None, false).into_detection();
-    };
-    evaluate_loaded_manifest(agent, input, loaded, false).into_detection()
+pub fn detect_with_osc(_agent: Agent, _input: DetectionInput<'_>) -> AgentDetection {
+    AgentDetection {
+        state: AgentState::Unknown,
+        skip_state_update: false,
+        visible_idle: false,
+        visible_blocker: false,
+        visible_working: false,
+    }
 }
 
 pub fn explain(agent: Agent, screen_content: &str) -> DetectionExplain {

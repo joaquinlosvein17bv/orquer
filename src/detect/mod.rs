@@ -303,28 +303,20 @@ pub fn detect_agent(agent: Option<Agent>, screen_content: &str) -> AgentDetectio
 
 /// Detect state using screen content plus OSC title/progress strings.
 pub fn detect_agent_with_osc(
-    agent: Option<Agent>,
-    screen_content: &str,
-    osc_title: &str,
-    osc_progress: &str,
+    _agent: Option<Agent>,
+    _screen_content: &str,
+    _osc_title: &str,
+    _osc_progress: &str,
 ) -> AgentDetection {
-    let Some(agent) = agent else {
-        return AgentDetection {
-            state: AgentState::Unknown,
-            skip_state_update: false,
-            visible_idle: false,
-            visible_blocker: false,
-            visible_working: false,
-        };
-    };
-    manifest::detect_with_osc(
-        agent,
-        manifest::DetectionInput {
-            screen: screen_content,
-            osc_title,
-            osc_progress,
-        },
-    )
+    // In Orquer, agent state is communicated explicitly via the mailbox or process lifecycle,
+    // not by scraping terminal ANSI screen text with regexes.
+    AgentDetection {
+        state: AgentState::Unknown,
+        skip_state_update: false,
+        visible_idle: false,
+        visible_blocker: false,
+        visible_working: false,
+    }
 }
 
 pub(crate) fn full_lifecycle_hook_authority(source: &str, agent_label: &str) -> bool {
