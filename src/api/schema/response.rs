@@ -277,6 +277,15 @@ pub enum ResponseResult {
         active: bool,
         projection_revision: u64,
     },
+    MailboxSent {
+        message_id: String,
+    },
+    MailboxMessage {
+        message: Option<serde_json::Value>,
+    },
+    MailboxMessages {
+        messages: Vec<serde_json::Value>,
+    },
     Ok {},
 }
 

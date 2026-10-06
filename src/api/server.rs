@@ -485,6 +485,26 @@ fn handle_connection_with_stop(
                 wait_for_output(request_id.clone(), params, &mut stream, api_tx, running)?;
             finish_wait_response(&mut stream, response, &request_id, method, changes_ui)
         }
+        Method::MailboxSend(params) => {
+            let response = handle_mailbox_send(request_id.clone(), params);
+            write_json_line_allow_disconnect(&mut stream, &response)
+        }
+        Method::MailboxRecv(params) => {
+            let response = handle_mailbox_recv(request_id.clone(), params, &mut stream, running)?;
+            write_json_line_allow_disconnect(&mut stream, &response)
+        }
+        Method::MailboxAsk(params) => {
+            let response = handle_mailbox_ask(request_id.clone(), params, &mut stream, running)?;
+            write_json_line_allow_disconnect(&mut stream, &response)
+        }
+        Method::MailboxReply(params) => {
+            let response = handle_mailbox_reply(request_id.clone(), params);
+            write_json_line_allow_disconnect(&mut stream, &response)
+        }
+        Method::MailboxList(params) => {
+            let response = handle_mailbox_list(request_id.clone(), params);
+            write_json_line_allow_disconnect(&mut stream, &response)
+        }
         method_body => {
             let (response_write_tx, response_write_rx) = std::sync::mpsc::channel();
             let stop_caller = matches!(method_body, Method::ServerStop(_))
@@ -546,6 +566,149 @@ fn finish_wait_response(
         Err(err) => crate::logging::api_request_failed(request_id, method, &err.to_string()),
     }
     result
+}
+
+fn handle_mailbox_send(request_id: String, params: crate::api::schema::MailboxSendParams) -> serde_json::Value {
+    let msg_type = match params.msg_type.to_lowercase().as_str() {
+        "task" => crate::mailbox::MessageType::Task,
+        "progress" => crate::mailbox::MessageType::Progress,
+        "ask" => crate::mailbox::MessageType::Ask,
+        "reply" => crate::mailbox::MessageType::Reply,
+        "result" => crate::mailbox::MessageType::Result,
+        "error" => crate::mailbox::MessageType::Error,
+        _ => crate::mailbox::MessageType::Progress,
+    };
+    let envelope = crate::mailbox::MessageEnvelope::new(
+        params.from.unwrap_or_else(|| "anonymous".to_string()),
+        params.to,
+        msg_type,
+        params.payload,
+        params.correlation_id,
+    );
+    match crate::mailbox::global().send(envelope) {
+        Ok(msg_id) => serde_json::json!({
+            "id": request_id,
+            "result": {
+                "type": "mailbox_sent",
+                "message_id": msg_id
+            }
+        }),
+        Err(err) => serde_json::json!({
+            "id": request_id,
+            "error": { "code": "mailbox_error", "message": err }
+        }),
+    }
+}
+
+fn handle_mailbox_recv(
+    request_id: String,
+    params: crate::api::schema::MailboxRecvParams,
+    _stream: &mut LocalStream,
+    _running: &Arc<AtomicBool>,
+) -> std::io::Result<serde_json::Value> {
+    let type_filter = params.msg_type.as_deref().and_then(|t| match t.to_lowercase().as_str() {
+        "task" => Some(crate::mailbox::MessageType::Task),
+        "progress" => Some(crate::mailbox::MessageType::Progress),
+        "ask" => Some(crate::mailbox::MessageType::Ask),
+        "reply" => Some(crate::mailbox::MessageType::Reply),
+        "result" => Some(crate::mailbox::MessageType::Result),
+        "error" => Some(crate::mailbox::MessageType::Error),
+        _ => None,
+    });
+    let recipient = params.recipient.unwrap_or_else(|| "orchestrator".to_string());
+    let timeout = params.timeout_ms.map(Duration::from_millis);
+
+    match crate::mailbox::global().recv(
+        &recipient,
+        params.from.as_deref(),
+        type_filter,
+        params.wait,
+        timeout,
+    ) {
+        Ok(msg_opt) => Ok(serde_json::json!({
+            "id": request_id,
+            "result": {
+                "type": "mailbox_message",
+                "message": msg_opt
+            }
+        })),
+        Err(err) => Ok(serde_json::json!({
+            "id": request_id,
+            "error": { "code": "mailbox_error", "message": err }
+        })),
+    }
+}
+
+fn handle_mailbox_ask(
+    request_id: String,
+    params: crate::api::schema::MailboxAskParams,
+    _stream: &mut LocalStream,
+    _running: &Arc<AtomicBool>,
+) -> std::io::Result<serde_json::Value> {
+    let envelope = crate::mailbox::MessageEnvelope::new(
+        params.from.unwrap_or_else(|| "subordinate".to_string()),
+        params.to,
+        crate::mailbox::MessageType::Ask,
+        serde_json::json!({
+            "question": params.question,
+            "options": params.options,
+        }),
+        None,
+    );
+    let timeout = params.timeout_ms.map(Duration::from_millis);
+
+    match crate::mailbox::global().ask(envelope, timeout) {
+        Ok(reply) => Ok(serde_json::json!({
+            "id": request_id,
+            "result": {
+                "type": "mailbox_message",
+                "message": reply
+            }
+        })),
+        Err(err) => Ok(serde_json::json!({
+            "id": request_id,
+            "error": { "code": "mailbox_ask_failed", "message": err }
+        })),
+    }
+}
+
+fn handle_mailbox_reply(
+    request_id: String,
+    params: crate::api::schema::MailboxReplyParams,
+) -> serde_json::Value {
+    let author = params.author.unwrap_or_else(|| "orchestrator".to_string());
+    match crate::mailbox::global().reply(&params.question_id, &params.choice, &author) {
+        Ok(reply) => serde_json::json!({
+            "id": request_id,
+            "result": {
+                "type": "mailbox_message",
+                "message": reply
+            }
+        }),
+        Err(err) => serde_json::json!({
+            "id": request_id,
+            "error": { "code": "mailbox_reply_failed", "message": err }
+        }),
+    }
+}
+
+fn handle_mailbox_list(
+    request_id: String,
+    params: crate::api::schema::MailboxListParams,
+) -> serde_json::Value {
+    match crate::mailbox::global().list(params.recipient.as_deref()) {
+        Ok(messages) => serde_json::json!({
+            "id": request_id,
+            "result": {
+                "type": "mailbox_messages",
+                "messages": messages
+            }
+        }),
+        Err(err) => serde_json::json!({
+            "id": request_id,
+            "error": { "code": "mailbox_list_failed", "message": err }
+        }),
+    }
 }
 
 fn handle_request(
@@ -705,6 +868,11 @@ pub(crate) fn api_method_name(method: &Method) -> &'static str {
         Method::PluginPaneOpen(_) => "plugin.pane.open",
         Method::PluginPaneFocus(_) => "plugin.pane.focus",
         Method::PluginPaneClose(_) => "plugin.pane.close",
+        Method::MailboxSend(_) => "mailbox.send",
+        Method::MailboxRecv(_) => "mailbox.recv",
+        Method::MailboxAsk(_) => "mailbox.ask",
+        Method::MailboxReply(_) => "mailbox.reply",
+        Method::MailboxList(_) => "mailbox.list",
     }
 }
 

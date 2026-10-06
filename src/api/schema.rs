@@ -5,6 +5,7 @@ pub mod commands;
 pub mod common;
 pub mod events;
 pub mod integrations;
+pub mod mailbox;
 pub mod panes;
 pub mod plugins;
 pub mod response;
@@ -19,6 +20,7 @@ pub use commands::*;
 pub use common::*;
 pub use events::*;
 pub use integrations::*;
+pub use mailbox::*;
 pub use panes::*;
 pub use plugins::*;
 pub use response::*;
@@ -249,6 +251,16 @@ pub enum Method {
     PluginPaneFocus(PluginPaneFocusParams),
     #[serde(rename = "plugin.pane.close")]
     PluginPaneClose(PluginPaneCloseParams),
+    #[serde(rename = "mailbox.send")]
+    MailboxSend(MailboxSendParams),
+    #[serde(rename = "mailbox.recv")]
+    MailboxRecv(MailboxRecvParams),
+    #[serde(rename = "mailbox.ask")]
+    MailboxAsk(MailboxAskParams),
+    #[serde(rename = "mailbox.reply")]
+    MailboxReply(MailboxReplyParams),
+    #[serde(rename = "mailbox.list")]
+    MailboxList(MailboxListParams),
 }
 
 #[cfg(test)]
