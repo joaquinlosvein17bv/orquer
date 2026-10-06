@@ -448,7 +448,9 @@ pane_history = false
 "##;
 
 // Bundled at build time so the printed skill always matches this binary's release.
-const SKILL: &str = include_str!("../skills/herdr/SKILL.md");
+const SKILL: &str = include_str!("../skills/orquer/SKILL.md");
+const SKILL_ORCHESTRATOR: &str = include_str!("../skills/orquer-orchestrator/SKILL.md");
+const SKILL_WORKER: &str = include_str!("../skills/orquer-worker/SKILL.md");
 
 fn should_block_nested(config: &config::Config) -> bool {
     should_block_nested_for_env(config, std::env::var(HERDR_ENV_VAR).ok().as_deref())
@@ -720,7 +722,9 @@ fn main() -> io::Result<()> {
         println!("                      Keybindings for --remote app attach (default: local)");
         println!("  --handoff           Opt into live handoff for update or remote attach");
         println!("  --default-config    Print default configuration and exit");
-        println!("  --skill             Print the agent skill file and exit");
+        println!("  --skill             Print the base agent skill file and exit");
+        println!("  --skill-orchestrator Print the orchestrator agent skill file and exit");
+        println!("  --skill-worker      Print the worker agent skill file and exit");
         println!("  --version, -V       Print version and exit");
         println!("  --help, -h          Show this help");
         println!();
@@ -751,6 +755,18 @@ fn main() -> io::Result<()> {
         return Ok(());
     }
 
+    if args.iter().any(|a| a == "--skill-orchestrator") {
+        platform::begin_cli_output();
+        print!("{SKILL_ORCHESTRATOR}");
+        return Ok(());
+    }
+
+    if args.iter().any(|a| a == "--skill-worker") {
+        platform::begin_cli_output();
+        print!("{SKILL_WORKER}");
+        return Ok(());
+    }
+
     // Reject unknown flags
     let known_flags = [
         "--session",
@@ -761,6 +777,8 @@ fn main() -> io::Result<()> {
         "-V",
         "--default-config",
         "--skill",
+        "--skill-orchestrator",
+        "--skill-worker",
         "--help",
         "-h",
     ];
@@ -768,7 +786,7 @@ fn main() -> io::Result<()> {
         let arg_name = arg.split_once('=').map(|(name, _)| name).unwrap_or(arg);
         if arg.starts_with('-') && !known_flags.contains(&arg_name) {
             eprintln!("unknown option: {arg}");
-            eprintln!("run 'herdr --help' for usage");
+            eprintln!("run 'orquer --help' for usage");
             std::process::exit(2);
         }
         if !arg.starts_with('-')
