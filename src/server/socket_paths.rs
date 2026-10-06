@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 /// Contractual override behavior for auto-detect uses `HERDR_SOCKET_PATH`.
 /// This variable is kept as a fallback for callers that explicitly need a
 /// client-only override when `HERDR_SOCKET_PATH` is not set.
-pub const CLIENT_SOCKET_PATH_ENV_VAR: &str = "HERDR_CLIENT_SOCKET_PATH";
+pub const CLIENT_SOCKET_PATH_ENV_VAR: &str = "ORQUER_CLIENT_SOCKET_PATH";
 
 /// Socket permission mode (owner read/write only).
 const SOCKET_PERMISSION_MODE: u32 = 0o600;
@@ -15,10 +15,10 @@ const SOCKET_PERMISSION_MODE: u32 = 0o600;
 ///
 /// Contract-aligned override behavior:
 /// 1. If CLI `--session <name>` is active, use that session's client socket.
-/// 2. If `HERDR_SOCKET_PATH` is set, derive the client socket path from it by
-///    inserting `-client` before `.sock` (e.g. `herdr.sock` -> `herdr-client.sock`).
+/// 2. If `ORQUER_SOCKET_PATH` is set, derive the client socket path from it by
+///    inserting `-client` before `.sock` (e.g. `orquer.sock` -> `orquer-client.sock`).
 ///    This keeps JSON API and client socket overrides consistent.
-/// 3. Otherwise, honor `HERDR_CLIENT_SOCKET_PATH` (legacy/testing fallback).
+/// 3. Otherwise, honor `ORQUER_CLIENT_SOCKET_PATH` (legacy/testing fallback).
 /// 4. Otherwise, use the active session data directory.
 pub fn client_socket_path() -> PathBuf {
     if crate::session::explicit_session_requested() {
@@ -51,7 +51,7 @@ pub(crate) fn derive_client_socket_from_api_socket(api_socket_path: &Path) -> Pa
     let stem = api_socket_path
         .file_stem()
         .and_then(|s| s.to_str())
-        .unwrap_or("herdr");
+        .unwrap_or("orquer");
     let parent = api_socket_path.parent().unwrap_or_else(|| Path::new(""));
 
     parent.join(format!("{stem}-client.sock"))

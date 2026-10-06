@@ -1,9 +1,9 @@
 [package]
-name = "herdr"
+name = "orquer"
 version = "0.9.3"
 edition = "2021"
 build = "build.rs"
-description = "terminal workspace manager for AI coding agents"
+description = "terminal workspace manager with explicit mailbox RPC for AI coding agents"
 license = "Apache-2.0"
 repository = "https://github.com/herdrdev/herdr"
 homepage = "https://herdr.dev"

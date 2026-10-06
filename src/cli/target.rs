@@ -204,7 +204,7 @@ pub(super) fn caller_pane_id() -> Option<String> {
     if is_remote() {
         return None;
     }
-    std::env::var("HERDR_PANE_ID")
+    std::env::var(crate::integration::HERDR_PANE_ID_ENV_VAR)
         .ok()
         .filter(|value| !value.trim().is_empty())
 }

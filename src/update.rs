@@ -25,7 +25,7 @@ use serde::{Deserialize, Deserializer};
 const STABLE_UPDATE_MANIFEST_URL: &str = "https://herdr.dev/latest.json";
 const PREVIEW_UPDATE_MANIFEST_URL: &str = "https://herdr.dev/preview.json";
 const HOMEBREW_FORMULA_API_URL: &str = "https://formulae.brew.sh/api/formula/herdr.json";
-const HERDR_UPDATE_COMMAND: &str = "herdr update";
+const HERDR_UPDATE_COMMAND: &str = "orquer update";
 const HOMEBREW_UPDATE_COMMAND: &str = "brew update && brew upgrade herdr";
 const MISE_UPDATE_COMMAND: &str = "mise upgrade herdr";
 const NIX_UPDATE_COMMAND: &str = "update through Nix";
@@ -531,26 +531,8 @@ fn first_windows_stable_is_pending(
 }
 
 fn check_latest() -> Result<Option<ReleaseInfo>, String> {
-    let channel = UpdateChannel::configured();
-    if channel == UpdateChannel::Preview {
-        return release_info_from_preview_manifest(&fetch_preview_manifest()?);
-    }
-
-    let manifest = fetch_update_manifest()?;
-    if first_windows_stable_is_pending(&manifest, cfg!(windows), crate::build_info::is_preview()) {
-        tracing::info!("waiting for the first stable Windows release");
-        return Ok(None);
-    }
-    let release = release_info_from_manifest(&manifest)?;
-    if let Some(release) = &release {
-        if let Some(metadata) = manifest.metadata_for_version(&release.version) {
-            handle_manifest_announcement(
-                &release.version.to_string(),
-                metadata.announcement.as_ref(),
-            );
-        }
-    }
-    Ok(release)
+    // Orquer is an independent project and does not fetch releases from herdr.dev
+    Ok(None)
 }
 
 fn parse_homebrew_formula_stable_version(input: &[u8]) -> Result<Version, String> {

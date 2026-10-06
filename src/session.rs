@@ -7,7 +7,7 @@ use interprocess::local_socket::traits::Stream as _;
 
 use crate::ipc::LocalStream;
 
-pub const SESSION_ENV_VAR: &str = "HERDR_SESSION";
+pub const SESSION_ENV_VAR: &str = "ORQUER_SESSION";
 pub const DEFAULT_SESSION_NAME: &str = "default";
 
 const MAX_SESSION_NAME_LEN: usize = 64;
@@ -104,8 +104,8 @@ pub fn active_name() -> Option<String> {
 
 pub fn local_attach_command() -> String {
     match active_name() {
-        Some(name) => format!("herdr session attach {name}"),
-        None => "herdr".to_string(),
+        Some(name) => format!("orquer session attach {name}"),
+        None => "orquer".to_string(),
     }
 }
 
@@ -115,8 +115,8 @@ pub fn local_stop_command() -> String {
 
 pub fn stop_command_for(name: Option<&str>) -> String {
     match name {
-        Some(name) => format!("herdr session stop {name}"),
-        None => "herdr server stop".to_string(),
+        Some(name) => format!("orquer session stop {name}"),
+        None => "orquer server stop".to_string(),
     }
 }
 
@@ -169,7 +169,7 @@ pub fn data_dir_for(name: Option<&str>) -> PathBuf {
 }
 
 pub fn api_socket_path_for(name: Option<&str>) -> PathBuf {
-    data_dir_for(name).join("herdr.sock")
+    data_dir_for(name).join("orquer.sock")
 }
 
 pub fn active_api_socket_path() -> PathBuf {

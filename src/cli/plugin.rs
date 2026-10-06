@@ -1697,6 +1697,11 @@ fn scrub_herdr_runtime_env(command: &mut Command) {
         crate::api::SOCKET_PATH_ENV_VAR,
         crate::server::socket_paths::CLIENT_SOCKET_PATH_ENV_VAR,
         crate::session::SESSION_ENV_VAR,
+        "ORQUER_BIN_PATH",
+        "ORQUER_ENV",
+        "ORQUER_WORKSPACE_ID",
+        "ORQUER_TAB_ID",
+        "ORQUER_PANE_ID",
         "HERDR_BIN_PATH",
         "HERDR_ENV",
         "HERDR_WORKSPACE_ID",
@@ -1706,7 +1711,8 @@ fn scrub_herdr_runtime_env(command: &mut Command) {
         command.env_remove(key);
     }
     for (key, _) in std::env::vars_os() {
-        if key.to_string_lossy().starts_with("HERDR_PLUGIN_") {
+        let name = key.to_string_lossy();
+        if name.starts_with("ORQUER_PLUGIN_") || name.starts_with("HERDR_PLUGIN_") {
             command.env_remove(key);
         }
     }
