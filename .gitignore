@@ -26,3 +26,9 @@ __pycache__/
 
 /.wrangler/
 **/.wrangler/
+
+# Local testing and binaries
+/test-build/
+/dist/
+*.exe
+*.pdb
