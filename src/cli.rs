@@ -27,6 +27,7 @@ mod api;
 mod completion;
 mod integration;
 mod machine;
+mod msg;
 mod notification;
 mod pane;
 mod plugin;
@@ -130,6 +131,9 @@ pub fn maybe_run(args: &[String]) -> std::io::Result<CommandOutcome> {
         "plugin" => plugin::run_plugin_command(&args[2..])?,
         "integration" => integration::run_integration_command(&args[2..])?,
         "session" => run_session_command(&args[2..])?,
+        "msg" | "mailbox" => msg::run_msg_command(&args[2..])?,
+        "ask" => msg::run_msg_ask_shorthand(&args[1..])?,
+        "reply" => msg::run_msg_reply_shorthand(&args[1..])?,
         _ => return Ok(CommandOutcome::NotCli),
     };
 

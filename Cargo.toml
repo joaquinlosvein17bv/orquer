@@ -20,6 +20,14 @@ include = [
     "Cargo.toml",
 ]
 
+[[bin]]
+name = "orquer"
+path = "src/main.rs"
+
+[[bin]]
+name = "orquer-msg"
+path = "src/bin/orquer_msg.rs"
+
 [workspace]
 members = ["crates/ghostty-vt"]
 default-members = [".", "crates/ghostty-vt"]

@@ -510,14 +510,24 @@ fn finish_cli(outcome: io::Result<cli::CommandOutcome>) -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
-    let raw_args: Vec<String> = match args_as_utf8(std::env::args_os()) {
+    let mut raw_args: Vec<String> = match args_as_utf8(std::env::args_os()) {
         Ok(args) => args,
         Err(err) => {
             eprintln!("error: {err}");
-            eprintln!("run 'herdr --help' for usage");
+            eprintln!("run 'orquer --help' for usage");
             std::process::exit(2);
         }
     };
+    if let Some(first) = raw_args.first() {
+        let is_msg_bin = std::path::Path::new(first)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .map(|s| s.eq_ignore_ascii_case("orquer-msg"))
+            .unwrap_or(false);
+        if is_msg_bin {
+            raw_args.insert(1, "msg".to_string());
+        }
+    }
     #[cfg(windows)]
     if let Some(result) = platform::maybe_activate_desktop_notification(&raw_args) {
         return result;
@@ -529,7 +539,7 @@ fn main() -> io::Result<()> {
         Ok(args) => args,
         Err(err) => {
             eprintln!("error: {err}");
-            eprintln!("run 'herdr --help' for usage");
+            eprintln!("run 'orquer --help' for usage");
             std::process::exit(2);
         }
     };
@@ -537,7 +547,7 @@ fn main() -> io::Result<()> {
         Ok(parsed) => parsed,
         Err(err) => {
             eprintln!("error: {err}");
-            eprintln!("run 'herdr --help' for usage");
+            eprintln!("run 'orquer --help' for usage");
             std::process::exit(2);
         }
     };
