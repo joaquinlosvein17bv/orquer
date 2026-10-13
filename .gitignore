@@ -30,5 +30,6 @@ __pycache__/
 # Local testing and binaries
 /test-build/
 /dist/
+/.atl/
 *.exe
 *.pdb
