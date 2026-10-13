@@ -319,6 +319,13 @@ impl App {
         if self.state.workspaces.get(index).is_none() {
             return workspace_not_found(id, &params.workspace_id);
         }
+        if self.state.workspaces.get(index).is_some_and(|ws| ws.is_orchestrator()) {
+            return encode_error(
+                id,
+                "orchestrator_workspace_protected",
+                "El espacio del Orquestador está protegido y no se puede cerrar",
+            );
+        }
         let close_indices = if params.close_group {
             self.state.workspace_group_close_indices(index)
         } else {

@@ -84,14 +84,25 @@ pub(crate) fn render_collapsed_sidebar(
         } else {
             Style::default().fg(palette.overlay0)
         };
-        put_text(
-            buffer,
-            rect.x,
-            rect.y,
-            rect.width.min(2),
-            &format!("{:<2}", index + 1),
-            number_style,
-        );
+        if workspace.is_orchestrator() {
+            put_text(
+                buffer,
+                rect.x,
+                rect.y,
+                rect.width.min(2),
+                "🎯",
+                number_style,
+            );
+        } else {
+            put_text(
+                buffer,
+                rect.x,
+                rect.y,
+                rect.width.min(2),
+                &format!("{:<2}", index + 1),
+                number_style,
+            );
+        }
         let status = workspace.agent_status;
         put_text(
             buffer,
@@ -215,10 +226,93 @@ pub(crate) fn render_sidebar(
         crate::ui::expanded_sidebar_sections(area, state.sidebar_section_split);
     hits.sidebar_section_divider =
         crate::ui::sidebar_section_divider_rect(area, state.sidebar_section_split);
+
+    let orch_entry = snapshot
+        .workspaces
+        .iter()
+        .find(|w| w.is_orchestrator());
+    let orch_rows: u16 = if orch_entry.is_some() && workspace_area.height >= 8 {
+        3
+    } else {
+        0
+    };
+
+    if let Some(orch_ws) = orch_entry {
+        if orch_rows > 0 {
+            put_text(
+                buffer,
+                workspace_area.x,
+                workspace_area.y,
+                workspace_area.width,
+                " 🎯 ORCHESTRATOR",
+                Style::default()
+                    .fg(palette.accent)
+                    .add_modifier(Modifier::BOLD),
+            );
+
+            let orch_rect = Rect::new(
+                workspace_area.x,
+                workspace_area.y + 1,
+                workspace_area.width.saturating_sub(1),
+                1,
+            );
+            let selected = state.selected_workspace_id.is_some_and(|target| {
+                target.matches(state.active_endpoint_id, &orch_ws.workspace_id)
+            });
+            if selected {
+                buffer.set_style(orch_rect, Style::default().bg(palette.selection_bg));
+            } else if orch_ws.focused {
+                buffer.set_style(orch_rect, Style::default().bg(palette.active_row_bg));
+            }
+
+            let status = orch_ws.agent_status;
+            put_text(
+                buffer,
+                orch_rect.x.saturating_add(1),
+                orch_rect.y,
+                2,
+                status_icon(status, config.status_indicators),
+                Style::default().fg(status_color(status, palette)),
+            );
+
+            let label_style = if orch_ws.focused {
+                Style::default().fg(palette.text).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(palette.subtext0)
+            };
+            put_text(
+                buffer,
+                orch_rect.x.saturating_add(3),
+                orch_rect.y,
+                orch_rect.width.saturating_sub(3),
+                "Orchestrator",
+                label_style,
+            );
+
+            hits.workspaces.push(WorkspaceHit {
+                rect: orch_rect,
+                endpoint_id: ClientEndpointId::Local,
+                workspace_id: orch_ws.workspace_id.clone(),
+                indented: false,
+                group_toggle: None,
+            });
+
+            put_text(
+                buffer,
+                workspace_area.x,
+                workspace_area.y + 2,
+                workspace_area.width,
+                &"─".repeat(workspace_area.width as usize),
+                Style::default().fg(palette.surface_dim),
+            );
+        }
+    }
+
+    let spaces_header_y = workspace_area.y + orch_rows;
     put_text(
         buffer,
         workspace_area.x,
-        workspace_area.y,
+        spaces_header_y,
         workspace_area.width,
         " spaces",
         Style::default()
@@ -229,11 +323,11 @@ pub(crate) fn render_sidebar(
     let entries = workspace_entries(snapshot, state.collapsed_groups);
     let body = Rect::new(
         workspace_area.x,
-        workspace_area.y.saturating_add(WORKSPACE_HEADER_ROWS),
+        spaces_header_y.saturating_add(WORKSPACE_HEADER_ROWS),
         workspace_area.width,
         workspace_area
             .height
-            .saturating_sub(WORKSPACE_HEADER_ROWS + 1),
+            .saturating_sub(orch_rows + WORKSPACE_HEADER_ROWS + 1),
     );
     hits.workspace_body = body;
     let row_heights = entries
@@ -461,6 +555,9 @@ pub(crate) fn workspace_entries(
 ) -> Vec<WorkspaceEntry> {
     let mut members = HashMap::<&str, Vec<usize>>::new();
     for (index, workspace) in snapshot.workspaces.iter().enumerate() {
+        if workspace.is_orchestrator() {
+            continue;
+        }
         if let Some(worktree) = &workspace.worktree {
             members.entry(&worktree.key).or_default().push(index);
         }
@@ -485,6 +582,9 @@ pub(crate) fn workspace_entries(
     let mut emitted = HashSet::<&str>::new();
     let mut entries = Vec::new();
     for (index, workspace) in snapshot.workspaces.iter().enumerate() {
+        if workspace.is_orchestrator() {
+            continue;
+        }
         let Some(worktree) = workspace
             .worktree
             .as_ref()

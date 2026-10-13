@@ -101,9 +101,9 @@ pub fn run_server() -> io::Result<()> {
 }
 
 fn seed_startup_workspace_if_empty(app: &mut app::App) {
-    let Some(cwd) = take_startup_cwd() else {
-        return;
-    };
+    let cwd = take_startup_cwd()
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_else(|| PathBuf::from("/"));
 
     if !app.state.workspaces.is_empty() {
         info!(
@@ -113,12 +113,12 @@ fn seed_startup_workspace_if_empty(app: &mut app::App) {
         return;
     }
 
-    match app.create_workspace_with_options(cwd.clone(), true) {
+    match app.create_orchestrator_workspace(cwd.clone(), true) {
         Ok(_) => {
-            info!(cwd = %cwd.display(), "created startup workspace");
+            info!(cwd = %cwd.display(), "created startup orchestrator workspace");
         }
         Err(err) => {
-            warn!(cwd = %cwd.display(), err = %err, "failed to create startup workspace");
+            warn!(cwd = %cwd.display(), err = %err, "failed to create startup orchestrator workspace");
             app.state.mode = app::Mode::Navigate;
         }
     }

@@ -672,6 +672,29 @@ impl AppState {
         if self.workspaces.is_empty() {
             return;
         }
+
+        let has_orchestrator = close_indices
+            .iter()
+            .any(|&idx| self.workspaces.get(idx).is_some_and(|ws| ws.is_orchestrator()));
+
+        let close_indices: Vec<usize> = close_indices
+            .into_iter()
+            .filter(|&idx| !self.workspaces.get(idx).is_some_and(|ws| ws.is_orchestrator()))
+            .collect();
+
+        if has_orchestrator {
+            self.toast = Some(crate::app::state::ToastNotification {
+                kind: crate::app::state::ToastKind::NeedsAttention,
+                title: "Orquer".to_string(),
+                context: "El espacio del Orquestador está protegido y no se puede cerrar.".to_string(),
+                position: None,
+                target: None,
+            });
+        }
+
+        if close_indices.is_empty() {
+            return;
+        }
         self.mark_session_dirty();
 
         let mut terminal_ids = Vec::new();
@@ -2949,6 +2972,19 @@ mod tests {
         assert_eq!(state.selected, 0);
         assert_eq!(state.active, Some(0));
         state.assert_invariants_for_test();
+    }
+
+    #[test]
+    fn close_orchestrator_workspace_is_prevented() {
+        let mut state = app_with_workspaces(&["🎯 Orchestrator", "worker-1"]);
+        state.selected = 0;
+        state.active = Some(0);
+
+        state.close_selected_workspace();
+
+        assert_eq!(state.workspaces.len(), 2);
+        assert_eq!(state.workspaces[0].display_name(), "🎯 Orchestrator");
+        assert!(state.toast.is_some());
     }
 
     #[test]

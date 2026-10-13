@@ -160,6 +160,27 @@ impl App {
         Ok(idx)
     }
 
+    pub(crate) fn create_orchestrator_workspace(
+        &mut self,
+        initial_cwd: PathBuf,
+        focus: bool,
+    ) -> std::io::Result<usize> {
+        let extra_env = vec![
+            ("ORQUER_ROLE".to_string(), "orchestrator".to_string()),
+            ("ORQUER_IS_ORCHESTRATOR".to_string(), "1".to_string()),
+        ];
+        let idx = self.create_workspace_with_launch_env(initial_cwd, focus, extra_env)?;
+        if let Some(ws) = self.state.workspaces.get_mut(idx) {
+            ws.set_custom_name("🎯 Orchestrator".to_string());
+            ws.metadata_tokens.set("role".to_string(), "orchestrator".to_string());
+            let root_pane = ws.tabs[0].root_pane;
+            if let Some(pane) = ws.tabs[0].panes.get_mut(&root_pane) {
+                pane.name = Some("Orchestrator".to_string());
+            }
+        }
+        Ok(idx)
+    }
+
     pub(super) fn collect_panes_for_workspace(
         &self,
         workspace_id: Option<&str>,

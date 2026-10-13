@@ -1003,6 +1003,16 @@ impl Workspace {
         self.custom_name = Some(name);
     }
 
+    pub fn is_orchestrator(&self) -> bool {
+        self.metadata_tokens
+            .get("role")
+            .map(String::as_str) == Some("orchestrator")
+            || self
+                .custom_name
+                .as_deref()
+                .map_or(false, |name| name.contains("Orchestrator") || name.contains("orquestador"))
+    }
+
     #[cfg(test)]
     pub fn resolved_identity_cwd(&self) -> Option<PathBuf> {
         Some(self.identity_cwd.clone())
@@ -1668,5 +1678,18 @@ mod tests {
         assert_eq!(ws.tabs[2].root_pane, moved_root);
         assert_eq!(ws.tabs[ws.active_tab].root_pane, active_root);
         ws.assert_invariants_for_test();
+    }
+
+    #[test]
+    fn test_orchestrator_identification() {
+        let mut ws = Workspace::test_new("test");
+        assert!(!ws.is_orchestrator());
+
+        ws.set_custom_name("🎯 Orchestrator".to_string());
+        assert!(ws.is_orchestrator());
+
+        let mut ws2 = Workspace::test_new("test2");
+        ws2.metadata_tokens.set("role".to_string(), "orchestrator".to_string());
+        assert!(ws2.is_orchestrator());
     }
 }

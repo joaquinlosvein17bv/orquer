@@ -1057,6 +1057,14 @@ pub struct ClientShellWorkspace {
     pub agent_status: crate::api::schema::AgentStatus,
 }
 
+impl ClientShellWorkspace {
+    pub fn is_orchestrator(&self) -> bool {
+        self.tokens.iter().any(|(k, v)| k == "role" && v == "orchestrator")
+            || self.label.contains("Orchestrator")
+            || self.label.contains("orquestador")
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClientShellWorktree {
     pub key: String,
