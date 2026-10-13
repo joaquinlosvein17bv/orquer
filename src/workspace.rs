@@ -1004,9 +1004,7 @@ impl Workspace {
     }
 
     pub fn is_orchestrator(&self) -> bool {
-        self.metadata_tokens
-            .get("role")
-            .map(String::as_str) == Some("orchestrator")
+        self.metadata_tokens.get("role") == Some("orchestrator")
             || self
                 .custom_name
                 .as_deref()
