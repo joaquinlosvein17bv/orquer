@@ -319,7 +319,12 @@ impl App {
         if self.state.workspaces.get(index).is_none() {
             return workspace_not_found(id, &params.workspace_id);
         }
-        if self.state.workspaces.get(index).is_some_and(|ws| ws.is_orchestrator()) {
+        if self
+            .state
+            .workspaces
+            .get(index)
+            .is_some_and(|ws| ws.is_orchestrator())
+        {
             return encode_error(
                 id,
                 "orchestrator_workspace_protected",

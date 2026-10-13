@@ -385,13 +385,17 @@ fn msg_ask(args: &[String]) -> std::io::Result<i32> {
 
     let Some(question) = question else {
         eprintln!("error: --question is required");
-        eprintln!("usage: orquer msg ask --question <question> --option <opt1> [--option <opt2>...]");
+        eprintln!(
+            "usage: orquer msg ask --question <question> --option <opt1> [--option <opt2>...]"
+        );
         return Ok(2);
     };
 
     if options.is_empty() {
         eprintln!("error: at least one --option is required");
-        eprintln!("usage: orquer msg ask --question <question> --option <opt1> [--option <opt2>...]");
+        eprintln!(
+            "usage: orquer msg ask --question <question> --option <opt1> [--option <opt2>...]"
+        );
         return Ok(2);
     }
 
@@ -584,7 +588,10 @@ fn msg_list(args: &[String]) -> std::io::Result<i32> {
                 let from = msg.get("from").and_then(|v| v.as_str()).unwrap_or("");
                 let to = msg.get("to").and_then(|v| v.as_str()).unwrap_or("");
                 let m_type = msg.get("msg_type").and_then(|v| v.as_str()).unwrap_or("");
-                let payload = msg.get("payload").map(|p| p.to_string()).unwrap_or_default();
+                let payload = msg
+                    .get("payload")
+                    .map(|p| p.to_string())
+                    .unwrap_or_default();
                 let truncated = if payload.len() > 40 {
                     format!("{}...", &payload[..37])
                 } else {

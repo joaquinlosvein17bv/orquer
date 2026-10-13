@@ -172,7 +172,8 @@ impl App {
         let idx = self.create_workspace_with_launch_env(initial_cwd, focus, extra_env)?;
         if let Some(ws) = self.state.workspaces.get_mut(idx) {
             ws.set_custom_name("🎯 Orchestrator".to_string());
-            ws.metadata_tokens.set("role".to_string(), "orchestrator".to_string());
+            ws.metadata_tokens
+                .set("role".to_string(), "orchestrator".to_string());
         }
         Ok(idx)
     }

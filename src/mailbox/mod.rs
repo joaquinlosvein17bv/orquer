@@ -167,7 +167,9 @@ impl MailboxManager {
                         if start.elapsed() >= timeout {
                             let mut state = self.state.lock().map_err(|e| e.to_string())?;
                             state.pending_replies.remove(&question_id);
-                            return Err(format!("timed out waiting for reply to question {question_id}"));
+                            return Err(format!(
+                                "timed out waiting for reply to question {question_id}"
+                            ));
                         }
                         std::thread::sleep(Duration::from_millis(10));
                     }
@@ -223,7 +225,12 @@ impl MailboxManager {
     pub fn list(&self, recipient: Option<&str>) -> Result<Vec<MessageEnvelope>, String> {
         let state = self.state.lock().map_err(|e| e.to_string())?;
         if let Some(recipient) = recipient {
-            Ok(state.queues.get(recipient).cloned().unwrap_or_default().into())
+            Ok(state
+                .queues
+                .get(recipient)
+                .cloned()
+                .unwrap_or_default()
+                .into())
         } else {
             let mut all = Vec::new();
             for queue in state.queues.values() {
@@ -250,9 +257,7 @@ mod tests {
         );
         mb.send(msg.clone()).unwrap();
 
-        let received = mb
-            .recv("orchestrator", None, None, false, None)
-            .unwrap();
+        let received = mb.recv("orchestrator", None, None, false, None).unwrap();
         assert!(received.is_some());
         assert_eq!(received.unwrap().id, msg.id);
     }
@@ -274,13 +279,18 @@ mod tests {
         );
         let q_id = question.id.clone();
 
-        let worker_handle = std::thread::spawn(move || {
-            mb.ask(question, Some(Duration::from_secs(5)))
-        });
+        let worker_handle =
+            std::thread::spawn(move || mb.ask(question, Some(Duration::from_secs(5))));
 
         // Orquestador lee y responde
         let received_q = mb_clone
-            .recv("orchestrator", None, Some(MessageType::Ask), true, Some(Duration::from_secs(2)))
+            .recv(
+                "orchestrator",
+                None,
+                Some(MessageType::Ask),
+                true,
+                Some(Duration::from_secs(2)),
+            )
             .unwrap()
             .unwrap();
         assert_eq!(received_q.id, q_id);

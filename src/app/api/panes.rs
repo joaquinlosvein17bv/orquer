@@ -1971,7 +1971,12 @@ impl App {
         let workspace_id = self.public_workspace_id(ws_idx);
         let layout_update_target = self.layout_update_target_after_pane_removal(ws_idx, pane_id);
         if self.state.close_pane_would_close_workspace(ws_idx, pane_id) {
-            if self.state.workspaces.get(ws_idx).is_some_and(|ws| ws.is_orchestrator()) {
+            if self
+                .state
+                .workspaces
+                .get(ws_idx)
+                .is_some_and(|ws| ws.is_orchestrator())
+            {
                 return Err(encode_error(
                     id,
                     "orchestrator_pane_protected",

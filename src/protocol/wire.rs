@@ -1059,7 +1059,9 @@ pub struct ClientShellWorkspace {
 
 impl ClientShellWorkspace {
     pub fn is_orchestrator(&self) -> bool {
-        self.tokens.iter().any(|(k, v)| k == "role" && v == "orchestrator")
+        self.tokens
+            .iter()
+            .any(|(k, v)| k == "role" && v == "orchestrator")
             || self.label.contains("Orchestrator")
             || self.label.contains("orquestador")
     }

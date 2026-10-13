@@ -46,7 +46,13 @@ impl MetadataTokens {
     }
 
     pub(crate) fn set(&mut self, key: String, value: String) {
-        self.entries.insert(key, MetadataToken { value, expires_at: None });
+        self.entries.insert(
+            key,
+            MetadataToken {
+                value,
+                expires_at: None,
+            },
+        );
     }
 
     pub(crate) fn patch(

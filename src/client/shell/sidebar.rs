@@ -227,10 +227,7 @@ pub(crate) fn render_sidebar(
     hits.sidebar_section_divider =
         crate::ui::sidebar_section_divider_rect(area, state.sidebar_section_split);
 
-    let orch_entry = snapshot
-        .workspaces
-        .iter()
-        .find(|w| w.is_orchestrator());
+    let orch_entry = snapshot.workspaces.iter().find(|w| w.is_orchestrator());
     let orch_rows: u16 = if orch_entry.is_some() && workspace_area.height >= 8 {
         3
     } else {
@@ -276,7 +273,9 @@ pub(crate) fn render_sidebar(
             );
 
             let label_style = if orch_ws.focused {
-                Style::default().fg(palette.text).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(palette.text)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(palette.subtext0)
             };

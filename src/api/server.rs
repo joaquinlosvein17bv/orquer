@@ -568,7 +568,10 @@ fn finish_wait_response(
     result
 }
 
-fn handle_mailbox_send(request_id: String, params: crate::api::schema::MailboxSendParams) -> serde_json::Value {
+fn handle_mailbox_send(
+    request_id: String,
+    params: crate::api::schema::MailboxSendParams,
+) -> serde_json::Value {
     let msg_type = match params.msg_type.to_lowercase().as_str() {
         "task" => crate::mailbox::MessageType::Task,
         "progress" => crate::mailbox::MessageType::Progress,
@@ -606,16 +609,21 @@ fn handle_mailbox_recv(
     _stream: &mut LocalStream,
     _running: &Arc<AtomicBool>,
 ) -> std::io::Result<serde_json::Value> {
-    let type_filter = params.msg_type.as_deref().and_then(|t| match t.to_lowercase().as_str() {
-        "task" => Some(crate::mailbox::MessageType::Task),
-        "progress" => Some(crate::mailbox::MessageType::Progress),
-        "ask" => Some(crate::mailbox::MessageType::Ask),
-        "reply" => Some(crate::mailbox::MessageType::Reply),
-        "result" => Some(crate::mailbox::MessageType::Result),
-        "error" => Some(crate::mailbox::MessageType::Error),
-        _ => None,
-    });
-    let recipient = params.recipient.unwrap_or_else(|| "orchestrator".to_string());
+    let type_filter = params
+        .msg_type
+        .as_deref()
+        .and_then(|t| match t.to_lowercase().as_str() {
+            "task" => Some(crate::mailbox::MessageType::Task),
+            "progress" => Some(crate::mailbox::MessageType::Progress),
+            "ask" => Some(crate::mailbox::MessageType::Ask),
+            "reply" => Some(crate::mailbox::MessageType::Reply),
+            "result" => Some(crate::mailbox::MessageType::Result),
+            "error" => Some(crate::mailbox::MessageType::Error),
+            _ => None,
+        });
+    let recipient = params
+        .recipient
+        .unwrap_or_else(|| "orchestrator".to_string());
     let timeout = params.timeout_ms.map(Duration::from_millis);
 
     match crate::mailbox::global().recv(

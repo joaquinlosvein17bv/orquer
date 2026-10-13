@@ -673,20 +673,28 @@ impl AppState {
             return;
         }
 
-        let has_orchestrator = close_indices
-            .iter()
-            .any(|&idx| self.workspaces.get(idx).is_some_and(|ws| ws.is_orchestrator()));
+        let has_orchestrator = close_indices.iter().any(|&idx| {
+            self.workspaces
+                .get(idx)
+                .is_some_and(|ws| ws.is_orchestrator())
+        });
 
         let close_indices: Vec<usize> = close_indices
             .into_iter()
-            .filter(|&idx| !self.workspaces.get(idx).is_some_and(|ws| ws.is_orchestrator()))
+            .filter(|&idx| {
+                !self
+                    .workspaces
+                    .get(idx)
+                    .is_some_and(|ws| ws.is_orchestrator())
+            })
             .collect();
 
         if has_orchestrator {
             self.toast = Some(crate::app::state::ToastNotification {
                 kind: crate::app::state::ToastKind::NeedsAttention,
                 title: "Orquer".to_string(),
-                context: "El espacio del Orquestador está protegido y no se puede cerrar.".to_string(),
+                context: "El espacio del Orquestador está protegido y no se puede cerrar."
+                    .to_string(),
                 position: None,
                 target: None,
             });

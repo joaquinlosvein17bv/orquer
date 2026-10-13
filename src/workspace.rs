@@ -1005,10 +1005,9 @@ impl Workspace {
 
     pub fn is_orchestrator(&self) -> bool {
         self.metadata_tokens.get("role") == Some("orchestrator")
-            || self
-                .custom_name
-                .as_deref()
-                .map_or(false, |name| name.contains("Orchestrator") || name.contains("orquestador"))
+            || self.custom_name.as_deref().map_or(false, |name| {
+                name.contains("Orchestrator") || name.contains("orquestador")
+            })
     }
 
     #[cfg(test)]
@@ -1687,7 +1686,8 @@ mod tests {
         assert!(ws.is_orchestrator());
 
         let mut ws2 = Workspace::test_new("test2");
-        ws2.metadata_tokens.set("role".to_string(), "orchestrator".to_string());
+        ws2.metadata_tokens
+            .set("role".to_string(), "orchestrator".to_string());
         assert!(ws2.is_orchestrator());
     }
 }
