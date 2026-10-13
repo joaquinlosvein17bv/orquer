@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::api::schema::mailbox::{
     MailboxAskParams, MailboxListParams, MailboxRecvParams, MailboxReplyParams, MailboxSendParams,
 };

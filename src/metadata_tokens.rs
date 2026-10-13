@@ -41,6 +41,14 @@ pub(crate) fn accept_sequence(
 }
 
 impl MetadataTokens {
+    pub(crate) fn get(&self, key: &str) -> Option<&str> {
+        self.entries.get(key).map(|t| t.value.as_str())
+    }
+
+    pub(crate) fn set(&mut self, key: String, value: String) {
+        self.entries.insert(key, MetadataToken { value, expires_at: None });
+    }
+
     pub(crate) fn patch(
         &mut self,
         patch: HashMap<String, Option<String>>,

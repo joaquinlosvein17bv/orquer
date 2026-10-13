@@ -173,10 +173,6 @@ impl App {
         if let Some(ws) = self.state.workspaces.get_mut(idx) {
             ws.set_custom_name("🎯 Orchestrator".to_string());
             ws.metadata_tokens.set("role".to_string(), "orchestrator".to_string());
-            let root_pane = ws.tabs[0].root_pane;
-            if let Some(pane) = ws.tabs[0].panes.get_mut(&root_pane) {
-                pane.name = Some("Orchestrator".to_string());
-            }
         }
         Ok(idx)
     }
