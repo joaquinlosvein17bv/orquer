@@ -21,8 +21,8 @@ As an **Orchestrator Agent** in Orquer, you supervise one or more subordinate ag
 
 To launch a worker in a split pane:
 ```bash
-# 1. Create a split pane
-NEW_PANE=$(orquer pane split right | jq -r '.result.pane.pane_id')
+# 1. Create a split pane (supports `orquer pane split right` or `--direction right`)
+NEW_PANE=$(orquer pane split --direction right | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).result?.pane?.pane_id||''))" 2>/dev/null || orquer pane split right | jq -r '.result.pane.pane_id')
 
 # 2. Start the worker agent in that pane (or send command)
 orquer pane send-text "$NEW_PANE" "my-worker-agent\n"

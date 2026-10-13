@@ -641,12 +641,20 @@ fn parse_pane_split_args(
     let mut right_click = PaneRightClickTarget::Herdr;
 
     let mut index = 0;
-    if args
-        .first()
-        .is_some_and(|arg| !arg.as_str().starts_with("--"))
-    {
-        pane_id = args.first().map(|arg| super::normalize_pane_id(arg));
-        index = 1;
+    if let Some(first) = args.first().filter(|arg| !arg.as_str().starts_with("--")) {
+        if let Ok(dir) = parse_split_direction(first.as_str()) {
+            direction = Some(dir);
+            index = 1;
+        } else {
+            pane_id = Some(super::normalize_pane_id(first));
+            index = 1;
+            if let Some(second) = args.get(1).filter(|arg| !arg.as_str().starts_with("--")) {
+                if let Ok(dir) = parse_split_direction(second.as_str()) {
+                    direction = Some(dir);
+                    index = 2;
+                }
+            }
+        }
     }
     while index < args.len() {
         match args[index].as_str() {
@@ -716,13 +724,22 @@ fn parse_pane_split_args(
                 env.insert(key, value);
                 index += 2;
             }
-            other => return Err(format!("unknown option: {other}")),
+            other => {
+                if let Ok(dir) = parse_split_direction(other) {
+                    if direction.is_none() {
+                        direction = Some(dir);
+                        index += 1;
+                        continue;
+                    }
+                }
+                return Err(format!("unknown option: {other}"));
+            }
         }
     }
 
     let Some(direction) = direction else {
         return Err(
-            "usage: herdr pane split [<pane_id>|--pane ID|--current] --direction right|down [--ratio FLOAT] [--cwd PATH] [--env KEY=VALUE] [--right-click herdr|pane] [--focus] [--no-focus]"
+            "usage: orquer pane split [<pane_id>] [right|down] [--direction right|down] [--ratio FLOAT] [--cwd PATH] [--env KEY=VALUE] [--right-click herdr|pane] [--focus] [--no-focus]"
                 .into(),
         );
     };
@@ -1821,6 +1838,21 @@ mod tests {
 
             assert_eq!(params.target_pane_id, Some("w2:p3".into()));
         }
+    }
+
+    #[test]
+    fn parse_pane_split_args_accepts_positional_direction() {
+        let params = parse_pane_split_args(&args(&["right"]), Some("w1:p1")).unwrap();
+        assert_eq!(params.target_pane_id, Some("w1:p1".into()));
+        assert_eq!(params.direction, crate::api::schema::SplitDirection::Right);
+
+        let params2 = parse_pane_split_args(&args(&["w2:p2", "down"]), None).unwrap();
+        assert_eq!(params2.target_pane_id, Some("w2:p2".into()));
+        assert_eq!(params2.direction, crate::api::schema::SplitDirection::Down);
+
+        let params3 = parse_pane_split_args(&args(&["--no-focus", "right"]), None).unwrap();
+        assert_eq!(params3.direction, crate::api::schema::SplitDirection::Right);
+        assert!(!params3.focus);
     }
 
     #[test]
