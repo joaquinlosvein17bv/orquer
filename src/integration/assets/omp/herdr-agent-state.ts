@@ -8,11 +8,11 @@
 import net from "node:net";
 import path from "node:path";
 
-const HERDR_ENV = process.env.HERDR_ENV;
-const socketPath = process.env.HERDR_SOCKET_PATH;
+const HERDR_ENV = process.env.ORQUER_ENV ?? process.env.HERDR_ENV;
+const socketPath = process.env.ORQUER_SOCKET_PATH ?? process.env.HERDR_SOCKET_PATH;
 const socketEndpoint =
   process.platform === "win32" && socketPath ? `\\\\.\\pipe\\${socketPath}` : socketPath;
-const paneId = process.env.HERDR_PANE_ID;
+const paneId = process.env.ORQUER_PANE_ID ?? process.env.HERDR_PANE_ID;
 const source = "herdr:omp";
 // OMP marks every shell it spawns with OMPCODE=1. A nested `omp` launched from
 // a parent session's shell inherits it, so that process is not the pane's root
@@ -76,8 +76,8 @@ type QueuedState = {
   seq: number;
 };
 
-const idleDebounceMs = parseDurationEnv("HERDR_OMP_IDLE_DEBOUNCE_MS", 250);
-const retryGraceMs = parseDurationEnv("HERDR_OMP_RETRY_GRACE_MS", 2500);
+const idleDebounceMs = parseDurationEnv("ORQUER_OMP_IDLE_DEBOUNCE_MS", parseDurationEnv("HERDR_OMP_IDLE_DEBOUNCE_MS", 250));
+const retryGraceMs = parseDurationEnv("ORQUER_OMP_RETRY_GRACE_MS", parseDurationEnv("HERDR_OMP_RETRY_GRACE_MS", 2500));
 const retryableErrorPattern =
   /overloaded|provider.?returned.?error|rate.?limit|too many requests|429|500|502|503|504|service.?unavailable|server.?error|internal.?error|network.?error|connection.?error|connection.?refused|connection.?lost|websocket.?closed|websocket.?error|other side closed|fetch failed|upstream.?connect|reset before headers|socket hang up|ended without|http2 request did not get a response|timed? out|timeout|terminated|retry delay/i;
 let reportSeq = Date.now() * 1000;
@@ -360,7 +360,7 @@ export default function (pi) {
     publishState();
   }
 
-  pi.events.on("herdr:blocked", (data) => {
+  const onBlocked = (data) => {
     if (!rootSession) {
       return;
     }
@@ -370,7 +370,9 @@ export default function (pi) {
     }
 
     activateBlocked(data.label);
-  });
+  };
+  pi.events.on("herdr:blocked", onBlocked);
+  pi.events.on("orquer:blocked", onBlocked);
 
   pi.on("session_start", (_event, ctx) => {
     if (!activateRootSession(ctx)) {

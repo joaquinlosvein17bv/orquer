@@ -8,11 +8,11 @@
 import net from "node:net";
 import path from "node:path";
 
-const HERDR_ENV = process.env.HERDR_ENV;
-const socketPath = process.env.HERDR_SOCKET_PATH;
+const HERDR_ENV = process.env.ORQUER_ENV ?? process.env.HERDR_ENV;
+const socketPath = process.env.ORQUER_SOCKET_PATH ?? process.env.HERDR_SOCKET_PATH;
 const socketEndpoint =
   process.platform === "win32" && socketPath ? `\\\\.\\pipe\\${socketPath}` : socketPath;
-const paneId = process.env.HERDR_PANE_ID;
+const paneId = process.env.ORQUER_PANE_ID ?? process.env.HERDR_PANE_ID;
 const source = "herdr:pi";
 
 function enabled() {
@@ -208,7 +208,7 @@ export default function (pi) {
     queueState(next.state, next.message);
   }
 
-  pi.events.on("herdr:blocked", (data) => {
+  const onBlocked = (data) => {
     if (!rootSession) {
       return;
     }
@@ -224,12 +224,14 @@ export default function (pi) {
     blockedCount += 1;
     blockedMessage = data.label;
     publishState();
-  });
+  };
+  pi.events.on("herdr:blocked", onBlocked);
+  pi.events.on("orquer:blocked", onBlocked);
 
   pi.on("session_start", async (event, ctx) => {
-    // TUI only: RPC/JSON/print modes are headless (no PTY herdr can display),
-    // and RPC still reports hasUI=true, so mode is the reliable gate.
-    if (ctx?.mode !== "tui") {
+    // TUI and managed terminal print modes (e.g. pi -p):
+    // RPC/JSON modes are headless (no PTY or terminal display).
+    if (ctx?.mode !== "tui" && ctx?.mode !== "print") {
       return;
     }
     rootSession = true;

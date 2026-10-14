@@ -189,6 +189,9 @@ fn apply_pane_launch_env(cmd: &mut CommandBuilder, launch_env: &PaneLaunchEnv) {
     cmd.env(crate::HERDR_ENV_VAR, crate::HERDR_ENV_VALUE);
     crate::integration::apply_pane_base_env(cmd);
     crate::platform::apply_pane_runtime_marker(cmd);
+    // Backward compatibility for existing agent integrations and hooks expecting HERDR_*
+    cmd.env("HERDR_ENV", "1");
+    cmd.env("HERDR_SOCKET_PATH", crate::api::socket_path());
     match &launch_env.identity {
         PaneLaunchIdentity::Inherit => {}
         PaneLaunchIdentity::Managed {
@@ -199,6 +202,9 @@ fn apply_pane_launch_env(cmd: &mut CommandBuilder, launch_env: &PaneLaunchEnv) {
             cmd.env(crate::integration::HERDR_WORKSPACE_ID_ENV_VAR, workspace_id);
             cmd.env(crate::integration::HERDR_TAB_ID_ENV_VAR, tab_id);
             cmd.env(crate::integration::HERDR_PANE_ID_ENV_VAR, pane_id);
+            cmd.env("HERDR_WORKSPACE_ID", workspace_id);
+            cmd.env("HERDR_TAB_ID", tab_id);
+            cmd.env("HERDR_PANE_ID", pane_id);
             if !launch_env.extra.iter().any(|(k, _)| k == "ORQUER_ROLE") {
                 if workspace_id == "w1" {
                     cmd.env("ORQUER_ROLE", "orchestrator");
@@ -211,6 +217,7 @@ fn apply_pane_launch_env(cmd: &mut CommandBuilder, launch_env: &PaneLaunchEnv) {
         }
         PaneLaunchIdentity::OmitPane => {
             cmd.env_remove(crate::integration::HERDR_PANE_ID_ENV_VAR);
+            cmd.env_remove("HERDR_PANE_ID");
         }
     }
 }
