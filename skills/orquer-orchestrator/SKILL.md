@@ -5,13 +5,14 @@ description: "Event-driven orchestrator instructions for coordinating subordinat
 
 # Orquer Orchestrator Protocol
 
-As an **Orchestrator Agent** in Orquer, you supervise one or more subordinate agents working in separate panes.
+As an **Orchestrator Agent** in Orquer, you supervise one or more subordinate agents working in separate dedicated workspaces.
 
 ## Cardinal Rules
 
 1. **NO TERMINAL POLLING:** Never loop reading terminal output (`orquer pane read`) or guessing agent state every 50 seconds. The 50-second terminal watcher is deprecated and eliminated.
 2. **PASSIVE EVENT-DRIVEN WAITING:** Always suspend execution on `orquer msg recv --wait`. Your process sleeps until a subordinate actively sends a notification.
 3. **STRUCTURED DECISION RESOLUTION:** When a subordinate is blocked on a multiple-choice decision or question, it sends an `ask` message. You MUST answer it promptly using `orquer msg reply`.
+4. **NEVER SPLIT THE ORCHESTRATOR TERMINAL:** The orchestrator workspace (🎯 Orchestrator) is a dedicated command deck. Never run `orquer pane split`. Always launch workers in their own dedicated workspace in the sidebar using `orquer workspace create --label "<name>" --no-focus`.
 
 ---
 
@@ -19,16 +20,17 @@ As an **Orchestrator Agent** in Orquer, you supervise one or more subordinate ag
 
 ### 1. Spawning and Assigning Work to a Subordinate
 
-To launch a worker in a split pane:
+To launch a worker in a dedicated workspace (in the sidebar list, never splitting the orchestrator pane):
 ```bash
-# 1. Create a split pane (supports `orquer pane split right` or `--direction right`)
-NEW_PANE=$(orquer pane split --direction right | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).result?.pane?.pane_id||''))" 2>/dev/null || orquer pane split right | jq -r '.result.pane.pane_id')
+# 1. Create a dedicated workspace in the sidebar (never split!)
+# Returns the initial pane ID of the new workspace (e.g. w2:p1)
+NEW_PANE=$(orquer workspace create --label "worker-1" --no-focus | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).result?.root_pane?.pane_id||''))" 2>/dev/null || orquer workspace create --label "worker-1" --no-focus | grep -o '"pane_id":"[^"]*"' | head -1 | sed 's/.*:"//; s/"$//')
 
-# 2. Start the worker agent in that pane (or send command)
+# 2. Start the worker agent in that workspace pane (or send command)
 orquer pane send-text "$NEW_PANE" "my-worker-agent\n"
 
-# 3. Dispatch the task explicitly via the message bus
-orquer msg send --to "$NEW_PANE" --type task --payload '{"goal": "Build authentication module", "spec": "OAuth2"}'
+# 3. Dispatch the task explicitly via the message bus (from 'orchestrator')
+orquer msg send --to "$NEW_PANE" --from orchestrator --type task --payload '{"goal": "Build authentication module", "spec": "OAuth2"}'
 ```
 
 ### 2. Waiting Passively for Updates (Zero CPU / Zero Polling)

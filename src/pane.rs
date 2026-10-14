@@ -199,6 +199,15 @@ fn apply_pane_launch_env(cmd: &mut CommandBuilder, launch_env: &PaneLaunchEnv) {
             cmd.env(crate::integration::HERDR_WORKSPACE_ID_ENV_VAR, workspace_id);
             cmd.env(crate::integration::HERDR_TAB_ID_ENV_VAR, tab_id);
             cmd.env(crate::integration::HERDR_PANE_ID_ENV_VAR, pane_id);
+            if !launch_env.extra.iter().any(|(k, _)| k == "ORQUER_ROLE") {
+                if workspace_id == "w1" {
+                    cmd.env("ORQUER_ROLE", "orchestrator");
+                    cmd.env("ORQUER_IS_ORCHESTRATOR", "1");
+                } else {
+                    cmd.env("ORQUER_ROLE", "worker");
+                    cmd.env("ORQUER_IS_WORKER", "1");
+                }
+            }
         }
         PaneLaunchIdentity::OmitPane => {
             cmd.env_remove(crate::integration::HERDR_PANE_ID_ENV_VAR);

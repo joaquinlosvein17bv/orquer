@@ -31,8 +31,10 @@ All `orquer msg` commands will automatically use this ID as your `--from` identi
 If you were spawned to wait for instructions:
 ```bash
 TASK=$(orquer msg recv --recipient "$ORQUER_PANE_ID" --type task --wait --json)
-GOAL=$(echo "$TASK" | jq -r '.payload.goal')
-echo "Assigned goal: $GOAL"
+GOAL=$(echo "$TASK" | jq -r '.payload.goal' 2>/dev/null || echo "$TASK" | grep -o '"goal":"[^"]*"' | head -1 | sed 's/.*:"//; s/"$//')
+SENDER=$(echo "$TASK" | jq -r '.from' 2>/dev/null || echo "$TASK" | grep -o '"from":"[^"]*"' | head -1 | sed 's/.*:"//; s/"$//')
+TARGET="${SENDER:-orchestrator}"
+echo "Assigned goal: $GOAL from: $TARGET"
 ```
 
 ### 3. Requesting Decisions / Multi-Option Choices (`orquer msg ask`)
@@ -76,14 +78,14 @@ CHOSEN_OPTION=$(orquer msg ask \
 
 Keep the orchestrator informed as milestones complete:
 ```bash
-orquer msg send --to orchestrator --type progress --payload '{"step": "database migration", "progress": "80%"}'
+orquer msg send --to "${TARGET:-orchestrator}" --type progress --payload '{"step": "database migration", "progress": "80%"}'
 ```
 
 ### 5. Reporting Final Result
 
 When your work is done:
 ```bash
-orquer msg send --to orchestrator --type result --payload '{
+orquer msg send --to "${TARGET:-orchestrator}" --type result --payload '{
     "status": "completed",
     "summary": "Implemented auth service with JWT support",
     "files_changed": ["src/auth.rs", "src/models.rs"]
@@ -94,7 +96,7 @@ orquer msg send --to orchestrator --type result --payload '{
 
 If an unrecoverable error occurs:
 ```bash
-orquer msg send --to orchestrator --type error --payload '{
+orquer msg send --to "${TARGET:-orchestrator}" --type error --payload '{
     "error": "Integration test failed",
     "details": "Connection refused to redis:6379"
 }'
